@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config()
+require('dotenv').config();
+const https = require('https');
+const fs = require('fs');
 
 const { DateTime } = require("luxon");
 
@@ -89,5 +91,19 @@ app.post('/order', async (req, res) => {
     }
 });
 
-const PORT = 8082;
-app.listen(PORT, () => console.log(`server starter on PORT=${PORT}`));
+const PORT = process.env.SERVER_PORT;
+if(process.env.SERVER_KEY_PATH.length > 0){
+    https
+    .createServer(
+      {
+        key: fs.readFileSync(process.env.SERVER_KEY_PATH),
+        cert: fs.readFileSync(process.env.SERVER_CERT_PATH),
+      },
+      app
+    )
+    .listen(PORT, function () {
+      console.log(`Server listens https://${host}:${port}`);
+    });
+}else{
+    app.listen(PORT, () => console.log(`server starter on PORT=${PORT}`));
+}

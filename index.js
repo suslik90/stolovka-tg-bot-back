@@ -83,8 +83,8 @@ app.post('/order', async (req, res) => {
         const subject = process.env.ADMIN_EMAIL_SUBJECT;
         const emailTemplateName = process.env.ADMIN_EMAIL_TEMPLATE;
         data.delivery.paymentString = data.delivery.payment == 'cash' ? "Наличные" : "Онлайн";
-        mailService.mail(data.delivery.email, subject, emailTemplateName, data).catch(console.error);
-        res.status(200).json({});
+        const sendResult = mailService.mail(data.delivery.email, subject, emailTemplateName, data).catch(console.error);
+        res.status(200).json({messageId: sendResult.messageId});
     } catch (e) {
         console.log("Error save order", e);
         res.status(500).json({ "errorName": e.name, "errorMessage": e.message });
@@ -102,8 +102,8 @@ if(process.env.SERVER_KEY_PATH.length > 0){
       app
     )
     .listen(PORT, function () {
-      console.log(`Server listens https://${host}:${port}`);
+      console.log(`Server listens on PORT=${PORT}`);
     });
 }else{
-    app.listen(PORT, () => console.log(`server starter on PORT=${PORT}`));
+    app.listen(PORT, () => console.log(`Server starter on PORT=${PORT}`));
 }

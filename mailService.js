@@ -34,7 +34,7 @@ const mail = async (_to, _subject, _template, _context) => {
     };
 
     let info = await transporter.sendMail(mailParams);
-
     console.log("Message sent: %s", info.messageId);
+    return info;
 }
 module.exports = { mail }

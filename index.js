@@ -27,14 +27,16 @@ app.use(cors());
 
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
+    const username = msg.chat?.first_name;
     const text = msg.text;
-    console.log(msg);
+    console.log("msg: ", msg);
 
     if (text === '/start') {
-        await bot.sendMessage(chatId, 'Посмотреть меню', {
+        const helloMessage = `Привет, ${username}! Мы рады, видеть тебя у нас в гостях!\n\nОзнакомиться с меню и сделать заказ можно нажав кнопку Меню ↙`;
+        await bot.sendMessage(chatId, helloMessage, {
             reply_markup: {
                 inline_keyboard: [
-                    [{ text: "Смотреть", web_app: { url: webAppURL } }]
+                    [{ text: "Меню инлайн", web_app: { url: webAppURL } }]
                 ]
             }
         });
@@ -78,13 +80,39 @@ app.get('/menu', async (req, res) => {
 app.post('/order', async (req, res) => {
 
     const data = req.body;
+    const queryId = data.queryId;
 
     try {
         const subject = process.env.ADMIN_EMAIL_SUBJECT;
         const emailTemplateName = process.env.ADMIN_EMAIL_TEMPLATE;
         data.delivery.paymentString = data.delivery.payment == 'cash' ? "Наличные" : "Онлайн";
-        const sendResult = mailService.mail(data.delivery.email, subject, emailTemplateName, data).catch(console.error);
-        res.status(200).json({messageId: sendResult.messageId});
+        const sendResult = await mailService.mail(data.delivery.email, subject, emailTemplateName, data).catch(console.error);
+        if (sendResult.messageId.length > 0) {
+            const delimeter = `\n\n`;
+            const messageHeader = `Спасибо за заказ!🤝`;
+            const messageDelivery = `<b>Доставим сюда:</b>\nУлица и дом: ${data.delivery.street}\n№ квартиры/офиса: ${data.delivery.apartment}\n` +
+                `Подъезд: ${data.delivery.entrance}\nЭтаж:${data.delivery.level}\n\n<b>Ваши контакты:</b>\nИмя: ${data.delivery.name}\n` +
+                `Телефон: ${data.delivery.phone}`;
+            let messageOrder = `<b>Заказ:</b>\n`;
+            data.order.map((item) => {
+                let orderItemString = `${item.name}\n${item.count}шт * ${item.price}р = ${item.totalPrice}р`;
+                messageOrder += orderItemString + '\n';
+            });
+            messageOrder += `\n<b>Оплата:</b> ${data.delivery.paymentString}\nКомментарий: ${data.delivery.comment}`;
+            const messageTotalOrder = `Общая сумма вашего заказа <b>${data.orderTotalPrice}р</b>. С вами свяжется менеджер для подтверждения заказа👍`;
+            await bot.answerWebAppQuery(queryId, {
+                type: 'article',
+                title: 'Заказ оформлен',
+                id: queryId,
+                input_message_content: {
+                    message_text: messageHeader + delimeter + messageDelivery + delimeter + messageOrder + delimeter + messageTotalOrder,
+                    parse_mode: 'HTML'
+                }
+            });
+            res.status(200).json({ "messageId": sendResult.messageId });
+        } else {
+            res.status(500).json({ "errorName": "EmailError", "errorMessage": "Send admin email error" });
+        }
     } catch (e) {
         console.log("Error save order", e);
         res.status(500).json({ "errorName": e.name, "errorMessage": e.message });
@@ -92,18 +120,18 @@ app.post('/order', async (req, res) => {
 });
 
 const PORT = process.env.SERVER_PORT;
-if(process.env.SERVER_KEY_PATH.length > 0){
+if (process.env.SERVER_KEY_PATH.length > 0) {
     https
-    .createServer(
-      {
-        key: fs.readFileSync(process.env.SERVER_KEY_PATH),
-        cert: fs.readFileSync(process.env.SERVER_CERT_PATH),
-      },
-      app
-    )
-    .listen(PORT, function () {
-      console.log(`Server listens on PORT=${PORT}`);
-    });
-}else{
+        .createServer(
+            {
+                key: fs.readFileSync(process.env.SERVER_KEY_PATH),
+                cert: fs.readFileSync(process.env.SERVER_CERT_PATH),
+            },
+            app
+        )
+        .listen(PORT, function () {
+            console.log(`Server listens on PORT=${PORT}`);
+        });
+} else {
     app.listen(PORT, () => console.log(`Server starter on PORT=${PORT}`));
 }

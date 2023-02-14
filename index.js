@@ -24,12 +24,12 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+const MENU_START_ROW = 4;
 
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const username = msg.chat?.first_name;
     const text = msg.text;
-    console.log("msg: ", msg);
 
     if (text === '/start') {
         const helloMessage = `Привет, ${username}! Мы рады, видеть тебя у нас в гостях!\n\nОзнакомиться с меню и сделать заказ можно нажав кнопку Меню ↙`;
@@ -53,15 +53,22 @@ app.get('/menu', async (req, res) => {
         const workbook = new ExcelJS.Workbook();
         const wb = await workbook.xlsx.readFile(filePath);
         const ws = wb.getWorksheet(worksheetName);
+
+        const wsImages = ws.getImages();
+
         ws.eachRow(function (row, rowNumber) {
             const rowValues = row.values;
             if (rowNumber == 1) {
                 menuName = rowValues[1] + " " + DateTime.fromJSDate(rowValues[2]).toFormat("dd.LL.y");
             }
-            if (rowNumber >= 4) {
+            if (rowNumber >= MENU_START_ROW) {
+                const naviteRowNumber = rowNumber - 1;
+                const mealImage = wsImages.find(wsImg => wsImg?.range?.tl?.nativeRow === naviteRowNumber) ?? null;
+                const imageItem = mealImage ? wb.model.media.find(m => m.index === mealImage.imageId) : null;
                 menuMeals.push({
                     name: rowValues[1],
-                    price: rowValues[2]
+                    price: rowValues[2],
+                    image: imageItem ? imageItem.buffer.toString('base64') : ""
                 });
             }
         });

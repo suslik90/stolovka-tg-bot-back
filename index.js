@@ -43,10 +43,8 @@ bot.on('message', async (msg) => {
     }
 });
 
-
 app.get('/menu', async (req, res) => {
 
-    let menuName = "";
     let menuMeals = [];
 
     try {
@@ -62,7 +60,7 @@ app.get('/menu', async (req, res) => {
 
             if (rowNumber >= MENU_START_ROW) {
                 const naviteRowNumber = rowNumber - 1;
-                const mealImage = wsImages.find(wsImg => wsImg?.range?.tl?.nativeRow === naviteRowNumber) ?? null;
+                const mealImage = wsImages.find(wsImg => wsImg?.range?.tl?.nativeRow === naviteRowNumber && wsImg?.range?.tl?.nativeCol === 4) ?? null;
                 const imageItem = mealImage ? wb.model.media.find(m => m.index === mealImage.imageId) : null;
                 const mealCategory = rowValues[3];
                 if (!catogoriesArray.includes(mealCategory)) catogoriesArray.push(mealCategory);
@@ -71,16 +69,15 @@ app.get('/menu', async (req, res) => {
                     description: rowValues[2],
                     category: mealCategory,
                     price: rowValues[4],
-                    image: imageItem ? imageItem.buffer.toString('base64') : ""
+                    image: imageItem ? imageItem.buffer.toString('base64') : "",
                 });
             }
         });
 
         let groupedMeals = catogoriesArray.map((categoryName) => {
-            const mealsByCategory = menuMeals.filter((menuItem)=>menuItem.category == categoryName);
+            const mealsByCategory = menuMeals.filter((menuItem) => menuItem.category == categoryName);
             return { category: categoryName, meals: mealsByCategory };
         });
-
 
         const menu = {
             "menu": groupedMeals

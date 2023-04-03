@@ -1,5 +1,5 @@
 .vscode/
 .git/
 node_modules/
-menu/*.xlsx
+menu/menu.xlsx
 .env

@@ -6,6 +6,11 @@ const fs = require('fs');
 
 const { DateTime } = require("luxon");
 
+const { GoogleSpreadsheet } = require('google-spreadsheet');
+const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID);
+const creds = require('./menu/creds.json');
+doc.useServiceAccountAuth(creds);
+
 const mailService = require('./mailService');
 
 const TelegramBot = require('node-telegram-bot-api');
@@ -46,34 +51,28 @@ bot.on('message', async (msg) => {
 app.get('/menu', async (req, res) => {
 
     let menuMeals = [];
+    let catogoriesArray = [];
 
     try {
-        const workbook = new ExcelJS.Workbook();
-        const wb = await workbook.xlsx.readFile(filePath);
-        const ws = wb.getWorksheet(worksheetName);
+        await doc.loadInfo();
+        const sheet = doc.sheetsByTitle[worksheetName];
+        const rows = await sheet.getRows();
+        for (const [key, row] of Object.entries(rows)) {
+            const mealCategory = row['Категория'];
+            if (!catogoriesArray.includes(mealCategory)) catogoriesArray.push(mealCategory);
+            const imageChunks = row['Фото']!= undefined ? row['Фото'].split("/") : [];
+            const imageFileId = imageChunks.length > 5 ? imageChunks[5] : "";
+            const binaryUrl = imageFileId.length > 0 ? `https://drive.google.com/uc?id=${imageFileId}`:"";
+            menuMeals.push({
+                name: row['Блюдо'],
+                description: row['Описание'],
+                category: mealCategory,
+                price: row['Цена'],
+                image: "",
+                binaryUrl: binaryUrl
+            });
 
-        const wsImages = ws.getImages();
-        let catogoriesArray = [];
-
-        ws.eachRow(function (row, rowNumber) {
-            const rowValues = row.values;
-
-            if (rowNumber >= MENU_START_ROW) {
-                const naviteRowNumber = rowNumber - 1;
-                const mealImage = wsImages.find(wsImg => wsImg?.range?.tl?.nativeRow === naviteRowNumber && wsImg?.range?.tl?.nativeCol === 4) ?? null;
-                const imageItem = mealImage ? wb.model.media.find(m => m.index === mealImage.imageId) : null;
-                const mealCategory = rowValues[3];
-                if (!catogoriesArray.includes(mealCategory)) catogoriesArray.push(mealCategory);
-                menuMeals.push({
-                    name: rowValues[1],
-                    description: rowValues[2],
-                    category: mealCategory,
-                    price: rowValues[4],
-                    image: imageItem ? imageItem.buffer.toString('base64') : "",
-                });
-            }
-        });
-
+        }
         let groupedMeals = catogoriesArray.map((categoryName) => {
             const mealsByCategory = menuMeals.filter((menuItem) => menuItem.category == categoryName);
             return { category: categoryName, meals: mealsByCategory };

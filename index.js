@@ -104,9 +104,9 @@ app.post('/order', async (req, res) => {
         if (sendResult.messageId.length > 0) {
             const delimeter = `\n\n`;
             const messageHeader = `Спасибо за заказ!🤝`;
-            const messageDelivery = `<b>Доставим сюда:</b>\nУлица и дом: ${data.delivery.street}\n№ квартиры/офиса: ${data.delivery.apartment}\n` +
-                `Подъезд: ${data.delivery.entrance}\nЭтаж:${data.delivery.level}\n\n<b>Ваши контакты:</b>\nИмя: ${data.delivery.name}\n` +
-                `Телефон: ${data.delivery.phone}`;
+            const messageDelivery = `<b>Доставим сюда:</b>\nГород: ${data.delivery.city}\nУлица и дом: ${data.delivery.street}\n` + 
+            `№ квартиры/офиса: ${data.delivery.apartment}\nПодъезд: ${data.delivery.entrance}\nЭтаж: ${data.delivery.level}\n\n` + 
+            `<b>Ваши контакты:</b>\nИмя: ${data.delivery.name}\nТелефон: ${data.delivery.phone}`;
             let messageOrder = `<b>Заказ:</b>\n`;
             data.order.map((item) => {
                 let orderItemString = `${item.name}\n${item.count}шт * ${item.price}р = ${item.totalPrice}р`;
@@ -127,7 +127,7 @@ app.post('/order', async (req, res) => {
                     }
                 });
             } catch (e) {
-
+                console.log("Error send TG order", e);
             }
             res.status(200).json({ "result": "OK" });
         } else {

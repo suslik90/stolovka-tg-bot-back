@@ -38,13 +38,7 @@ bot.on('message', async (msg) => {
 
     if (text === '/start') {
         const helloMessage = `Привет, ${username}! Мы рады, видеть тебя у нас в гостях!\n\nОзнакомиться с меню и сделать заказ можно нажав кнопку Меню ↙`;
-        await bot.sendMessage(chatId, helloMessage, {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: "Меню инлайн", web_app: { url: webAppURL } }]
-                ]
-            }
-        });
+        await bot.sendMessage(chatId, helloMessage);
     }
 });
 
@@ -98,7 +92,7 @@ app.post('/order', async (req, res) => {
         const emailTemplateName = process.env.ADMIN_EMAIL_TEMPLATE;
         const paymentIsCash = data.delivery.payment == 'cash';
         const needHitBack = data.delivery.hitBack && data.delivery.hitBackSum != undefined;
-        data.delivery.paymentString = paymentIsCash ? "Наличные" : "Онлайн";
+        data.delivery.paymentString = paymentIsCash ? "Наличные" : "Карта";
         data.delivery.hitBackMessage = needHitBack ? `Нужна сдача с ${data.delivery.hitBackSum}р` : ``;
         const sendResult = await mailService.mail(data.delivery.email, subject, emailTemplateName, data).catch(console.error);
         if (sendResult.messageId.length > 0) {
@@ -112,6 +106,7 @@ app.post('/order', async (req, res) => {
                 let orderItemString = `${item.name}\n${item.count}шт * ${item.price}р = ${item.totalPrice}р`;
                 messageOrder += orderItemString + '\n';
             });
+            messageOrder += `Доставка\n1шт * ${data.delivery.deliveryAmount}р = ${data.delivery.deliveryAmount}р\n`;
             messageOrder += `\n<b>Оплата:</b> ${data.delivery.paymentString}\n`;
             if (needHitBack) messageOrder += `Нужна сдача с ${data.delivery.hitBackSum}р\n`;
             messageOrder += `Комментарий: ${data.delivery.comment}`;

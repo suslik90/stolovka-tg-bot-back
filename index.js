@@ -88,13 +88,14 @@ app.post('/order', async (req, res) => {
     const queryId = data.queryId;
 
     try {
+        const adminEmail = process.env.ADMIN_EMAIL;
         const subject = process.env.ADMIN_EMAIL_SUBJECT;
         const emailTemplateName = process.env.ADMIN_EMAIL_TEMPLATE;
         const paymentIsCash = data.delivery.payment == 'cash';
         const needHitBack = data.delivery.hitBack && data.delivery.hitBackSum != undefined;
         data.delivery.paymentString = paymentIsCash ? "Наличные" : "Карта";
         data.delivery.hitBackMessage = needHitBack ? `Нужна сдача с ${data.delivery.hitBackSum}р` : ``;
-        const sendResult = await mailService.mail(data.delivery.email, subject, emailTemplateName, data).catch(console.error);
+        const sendResult = await mailService.mail(adminEmail, subject, emailTemplateName, data).catch(console.error);
         if (sendResult.messageId.length > 0) {
             const delimeter = `\n\n`;
             const messageHeader = `Спасибо за заказ!🤝`;

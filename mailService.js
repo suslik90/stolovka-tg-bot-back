@@ -11,6 +11,7 @@ const mail = async (_to, _subject, _template, _context) => {
             user: process.env.SMTP_LOGIN,
             pass: process.env.SMTP_PASSWORD,
         },
+        connectionTimeout: 10000
     });
 
     const TEMPLATE_CATALOG = `./${process.env.EMAIL_TEMPLATE_CATALOG}/`;

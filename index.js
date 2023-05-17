@@ -23,6 +23,7 @@ const token = process.env.TELEGRAM_BOT_TOKEN;
 
 const bot = new TelegramBot(token, { polling: true });
 const webAppURL = process.env.WEBAPP_URL;
+const STOPLIST_VALUE = process.env.MENU_STOPLIST_VALUE;
 
 const app = express();
 
@@ -52,7 +53,11 @@ app.get('/menu', async (req, res) => {
         const sheet = doc.sheetsByTitle[worksheetName];
         const rows = await sheet.getRows();
         for (const [key, row] of Object.entries(rows)) {
+
+            if(row['Доступно'] == STOPLIST_VALUE) continue;
+
             const mealCategory = row['Категория'];
+            console.log("Доступно: ", row['Доступно'], typeof row['Доступно']);
             if (!catogoriesArray.includes(mealCategory)) catogoriesArray.push(mealCategory);
             const imageChunks = row['Фото']!= undefined ? row['Фото'].split("/") : [];
             const imageFileId = imageChunks.length > 5 ? imageChunks[5] : "";

@@ -61,7 +61,8 @@ app.get('/menu', async (req, res) => {
             if (!catogoriesArray.includes(mealCategory)) catogoriesArray.push(mealCategory);
             const imageChunks = row['Фото']!= undefined ? row['Фото'].split("/") : [];
             const imageFileId = imageChunks.length > 5 ? imageChunks[5] : "";
-            const binaryUrl = imageFileId.length > 0 ? `https://drive.google.com/uc?id=${imageFileId}`:"";
+            // const binaryUrl = imageFileId.length > 0 ? `https://drive.google.com/uc?id=${imageFileId}`:"";
+            const binaryUrl = imageFileId.length > 0 ? `https://drive.google.com/thumbnail?id=${imageFileId}`:"";
             menuMeals.push({
                 name: row['Блюдо'],
                 description: row['Описание'],
